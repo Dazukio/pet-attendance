@@ -57,7 +57,7 @@ public class StudentRepository extends BaseRepository<Student, Integer> {
         return student;
     }
 
-    // Дополнительные методы для пагинации и фильтрации
+    // Methods for pagination and filtration
     public List<Student> findByGroupId(int groupId) throws SQLException {
         List<Student> students = new ArrayList<>();
         String sql = "SELECT * FROM students WHERE group_id = ?";
@@ -73,8 +73,51 @@ public class StudentRepository extends BaseRepository<Student, Integer> {
     }
 
     public List<Student> findAll(Map<String, String> params) throws SQLException {
-        // Реализация пагинации и фильтрации
-        // Можно добавить позже
-        return findAll();
+        List<Student> students = new ArrayList<>();
+        List<Object> parameters = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM students WHERE 1=1");
+
+        // group filter
+        if (params.containsKey("group_id")) {
+            sql.append(" AND group_id = ?");
+            parameters.add(Integer.parseInt(params.get("group_id")));
+        }
+
+        // Pagination
+        int limit = 50; // default limit
+        int offset = 0; // default offset
+
+        if (params.containsKey("size")) {
+            limit = Integer.parseInt(params.get("size"));
+            // MAX 100
+            if (limit > 100)
+                limit = 100;
+            if (limit < 1)
+                limit = 1;
+        }
+
+        if (params.containsKey("page")) {
+            int page = Integer.parseInt(params.get("page"));
+            if (page < 0)
+                page = 0;
+            offset = page * limit;
+        }
+
+        sql.append(" LIMIT ? OFFSET ?");
+        parameters.add(limit);
+        parameters.add(offset);
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < parameters.size(); i++) {
+                stmt.setObject(i + 1, parameters.get(i));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                students.add(mapResultSetToEntity(rs));
+            }
+        }
+        return students;
     }
 }

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.parameters.QueryParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -115,16 +116,30 @@ public class SwaggerConfig {
         private static PathItem createStudentsPathItem() {
                 Schema studentSchema = new Schema()
                                 .type("object")
-                                .addProperty("firstName", new Schema().type("string").example("Ivan"))
-                                .addProperty("lastName", new Schema().type("string").example("Petrov"))
-                                .addProperty("studentId", new Schema().type("string").example("21IT-001"))
+                                .addProperty("firstName", new Schema().type("string").example("Иван"))
+                                .addProperty("lastName", new Schema().type("string").example("Петров"))
+                                .addProperty("studentId", new Schema().type("string").example("ИТ21-001"))
                                 .addProperty("groupId", new Schema().type("integer").example(1));
 
                 return new PathItem()
                                 .get(new Operation()
                                                 .summary("Get all students")
-                                                .description("Retrieve list of all students")
-                                                .responses(createDefaultResponses()))
+                                                .description("Retrieve list of all students with pagination and filtering")
+                                                .addParametersItem(new QueryParameter()
+                                                                .name("group_id")
+                                                                .description("Filter students by group ID")
+                                                                .schema(new Schema().type("integer")))
+                                                .addParametersItem(new QueryParameter()
+                                                                .name("page")
+                                                                .description("Page number (0-based)")
+                                                                .schema(new Schema().type("integer").example(0)))
+                                                .addParametersItem(new QueryParameter()
+                                                                .name("size")
+                                                                .description("Page size (1-100)")
+                                                                .schema(new Schema().type("integer").example(20)))
+                                                .responses(new ApiResponses()
+                                                                .addApiResponse("200", new ApiResponse()
+                                                                                .description("List of students"))))
                                 .post(new Operation()
                                                 .summary("Create new student")
                                                 .description("Create a new student")
@@ -133,7 +148,9 @@ public class SwaggerConfig {
                                                                                 .addMediaType("application/json",
                                                                                                 new MediaType().schema(
                                                                                                                 studentSchema))))
-                                                .responses(createDefaultResponses()));
+                                                .responses(new ApiResponses()
+                                                                .addApiResponse("201", new ApiResponse()
+                                                                                .description("Student created successfully"))));
         }
 
         private static PathItem createAttendancePathItem() {
